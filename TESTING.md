@@ -1,5 +1,5 @@
-Lagoon Drupal 9 Simple - php74, nginx, mariadb
-==============================================
+Lagoon Drupal 9 postgres - php74, nginx, postgres
+=================================================
 
 This example exists primarily to test the following documentation:
 
@@ -32,18 +32,18 @@ lando drush cr -y
 lando drush status | grep "Drupal bootstrap" | grep "Successful"
 
 # Should have all the services we expect
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_nginx_1
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_mariadb_1
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_mailhog_1
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_php_1
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_cli_1
-docker ps --filter label=com.docker.compose.project=drupal9examplesimple | grep Up | grep drupal9examplesimple_lagooncli_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_nginx_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_postgres_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_mailhog_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_php_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_cli_1
+docker ps --filter label=com.docker.compose.project=drupal9landopostgres | grep Up | grep drupal9examplepostgres_lagooncli_1
 
 # Should ssh against the cli container by default
 lando ssh -c "env | grep LAGOON=" | grep cli-drupal
 
 # Should have the correct environment set
-lando ssh -c "env" | grep LAGOON_ROUTE | grep drupal9-example-simple.lndo.site
+lando ssh -c "env" | grep LAGOON_ROUTE | grep drupal9-lando-postgres.lndo.site
 lando ssh -c "env" | grep LAGOON_ENVIRONMENT_TYPE | grep development
 
 # Should be running PHP 7.4
@@ -70,20 +70,26 @@ lando yarn --version
 # Should have lagoon cli
 lando lagoon --version | grep lagoon
 
-# Should have a running Drupal 8 site served by nginx on port 8080
+# Should have a running Drupal 9 site served by nginx on port 8080
 lando ssh -s cli -c "curl -kL http://nginx:8080" | grep "Welcome to Drush Site-Install"
+
+# Check PostgreSQL version is 11.*
+lando psql -V
+
+# Should be able to show the database connection info
+lando psql drupal -c "\\conninfo" | grep drupal | grep 5432
+
+# Should be able to show the Drupal tables
+lando psql drupal -P pager=off -c "\\dt" | grep users
 
 # Should be able to db-export and db-import the database
 lando db-export test.sql
 lando db-import test.sql.gz
 rm test.sql*
 
-# Should be able to show the drupal tables
-lando mysql drupal -e "show tables;" | grep users
-
-# Should be able to rebuild and persist the database
+# Shoud be able to rebuild and persist the database
 lando rebuild -y
-lando mysql drupal -e "show tables;" | grep users
+lando psql drupal -P pager=off -c "\\dt" | grep users
 ```
 
 Destroy tests
